@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>The Void - Secure Comms</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>The Void - Secure Comms v2.0</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,10 +13,11 @@
             margin: 0;
             padding: 0;
             width: 100%;
-            height: 100%;
+            /* Fix for mobile browser bars covering content */
+            height: 100dvh; 
             background-color: #050505;
             font-family: 'Rajdhani', sans-serif;
-            overflow-x: hidden;
+            overflow: hidden;
         }
 
         #canvas-bg {
@@ -78,6 +79,7 @@
             box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
             transform: translateY(-2px);
         }
+        .glitch-btn:active { transform: scale(0.98); }
 
         .secondary-action-btn {
             background: rgba(0, 0, 0, 0.3);
@@ -112,38 +114,53 @@
 
         /* Chat Specifics */
         .msg-bubble {
-            max-width: 80%;
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 0.9rem;
+            max-width: 85%;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 0.95rem;
             position: relative;
-            margin-bottom: 8px;
+            margin-bottom: 12px;
             word-wrap: break-word;
             animation: fadeIn 0.3s ease-out;
+            display: flex;
+            gap: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.3);
         }
         
         .msg-own {
             align-self: flex-end;
-            background: rgba(0, 255, 255, 0.15);
-            border: 1px solid rgba(0, 255, 255, 0.3);
-            color: #d0ffff;
-            border-bottom-right-radius: 0;
+            background: rgba(0, 60, 60, 0.8);
+            border: 1px solid rgba(0, 255, 255, 0.4);
+            color: #e0ffff;
+            border-bottom-right-radius: 2px;
+            flex-direction: row-reverse; /* Avatar on right */
         }
 
         .msg-other {
             align-self: flex-start;
-            background: rgba(255, 0, 255, 0.15);
-            border: 1px solid rgba(255, 0, 255, 0.3);
-            color: #ffd0ff;
-            border-bottom-left-radius: 0;
+            background: rgba(60, 0, 60, 0.8);
+            border: 1px solid rgba(255, 0, 255, 0.4);
+            color: #ffe0ff;
+            border-bottom-left-radius: 2px;
         }
+
+        .msg-content { display: flex; flex-direction: column; }
 
         .msg-sender {
             font-size: 0.65rem;
-            color: rgba(255,255,255,0.5);
+            color: rgba(255,255,255,0.6);
             margin-bottom: 2px;
             font-family: 'Orbitron', sans-serif;
             letter-spacing: 1px;
+            font-weight: bold;
+        }
+        
+        .avatar-img {
+            width: 36px;
+            height: 36px;
+            border-radius: 6px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid rgba(255,255,255,0.2);
         }
 
         /* Mascot SVG */
@@ -158,7 +175,7 @@
             30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
             40%, 60% { transform: translate3d(4px, 0, 0); }
         }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; }
@@ -211,14 +228,14 @@
                             <input type="password" id="login-pass" placeholder="PASSCODE" class="input-field px-4 py-3 rounded-lg" required>
                         </div>
                         
-                        <button type="submit" class="glitch-btn w-full py-4 rounded-lg text-lg mb-6 font-bold">
+                        <button type="submit" class="glitch-btn w-full py-4 rounded-lg text-lg mb-6 font-bold" onmouseenter="playSound('hover')">
                             <i class="fas fa-fingerprint mr-2"></i> ACCESS
                         </button>
                     </form>
 
                     <div class="mt-auto pt-4 border-t border-gray-700/50">
                         <p class="text-gray-400 text-sm text-center mb-3">NO CREDENTIALS?</p>
-                        <button onclick="toggleAuthMode('signup')" class="secondary-action-btn w-full py-3 rounded-lg text-sm font-bold tracking-wider">
+                        <button onclick="toggleAuthMode('signup')" class="secondary-action-btn w-full py-3 rounded-lg text-sm font-bold tracking-wider" onmouseenter="playSound('hover')">
                             <i class="fas fa-user-plus mr-2"></i> INITIATE RECRUITMENT
                         </button>
                     </div>
@@ -236,14 +253,14 @@
                             <input type="password" id="signup-pass" placeholder="CREATE PASSCODE" class="input-field px-4 py-3 rounded-lg" style="border-color: rgba(255, 0, 255, 0.3); color: #f0f;" required>
                         </div>
                         
-                        <button type="submit" class="glitch-btn w-full py-4 rounded-lg text-lg mb-6 font-bold" style="background: linear-gradient(90deg, #f0f, #a0f);">
+                        <button type="submit" class="glitch-btn w-full py-4 rounded-lg text-lg mb-6 font-bold" style="background: linear-gradient(90deg, #f0f, #a0f);" onmouseenter="playSound('hover')">
                             <i class="fas fa-check-circle mr-2"></i> JOIN THE VOID
                         </button>
                     </form>
 
                     <div class="mt-auto pt-4 border-t border-gray-700/50">
                         <p class="text-gray-400 text-sm text-center mb-3">EXISTING AGENT?</p>
-                        <button onclick="toggleAuthMode('login')" class="secondary-action-btn w-full py-3 rounded-lg text-sm font-bold tracking-wider" style="border-color: #f0f; color: #f0f;">
+                        <button onclick="toggleAuthMode('login')" class="secondary-action-btn w-full py-3 rounded-lg text-sm font-bold tracking-wider" style="border-color: #f0f; color: #f0f;" onmouseenter="playSound('hover')">
                             <i class="fas fa-arrow-left mr-2"></i> RETURN TO LOGIN
                         </button>
                     </div>
@@ -280,14 +297,14 @@
                     <p id="user-display" class="text-xs text-cyan-400 font-mono">AGENT: FETCHING...</p>
                 </div>
             </div>
-            <button onclick="handleLogout()" class="secondary-btn px-4 py-2 rounded font-['Orbitron'] text-sm hover:bg-red-500/20 hover:border-red-500 hover:text-red-500 transition">
+            <button onclick="handleLogout()" class="secondary-btn px-4 py-2 rounded font-['Orbitron'] text-sm hover:bg-red-500/20 hover:border-red-500 hover:text-red-500 transition" onmouseenter="playSound('hover')">
                 DISCONNECT
             </button>
         </header>
 
         <main class="flex-grow flex gap-4 p-4 h-full overflow-hidden">
-            <!-- Left: Info Panel -->
-            <div class="glass-panel p-6 rounded-2xl w-1/4 flex flex-col border-dashed border-2 border-cyan-500/30">
+            <!-- Left: Info Panel (Desktop Only for better Mobile UX) -->
+            <div class="glass-panel p-6 rounded-2xl w-1/4 hidden md:flex flex-col border-dashed border-2 border-cyan-500/30">
                 <h2 class="text-2xl font-['Orbitron'] mb-4 text-cyan-400">PROFILE</h2>
                 <div class="mb-6 space-y-2 text-sm text-gray-300">
                     <div class="flex justify-between border-b border-gray-700 pb-1">
@@ -310,8 +327,8 @@
                 </div>
             </div>
 
-            <!-- Right: Chat Interface -->
-            <div class="glass-panel rounded-2xl w-3/4 flex flex-col border-2 border-cyan-500/10 relative overflow-hidden">
+            <!-- Right: Chat Interface (Full Width on Mobile) -->
+            <div class="glass-panel rounded-2xl w-full md:w-3/4 flex flex-col border-2 border-cyan-500/10 relative overflow-hidden">
                 <!-- Chat Header -->
                 <div class="p-4 border-b border-gray-700 bg-black/20 flex justify-between items-center">
                     <h2 class="font-['Orbitron'] text-white flex items-center gap-2">
@@ -331,7 +348,7 @@
                 <!-- Input Area -->
                 <form onsubmit="handleSendChat(event)" class="p-4 bg-black/30 border-t border-gray-700 flex gap-2">
                     <input type="text" id="chat-input" placeholder="TRANSMIT MESSAGE..." class="input-field px-4 py-3 rounded-lg flex-grow text-sm" autocomplete="off" required>
-                    <button type="submit" class="glitch-btn px-6 py-2 rounded-lg font-bold text-sm">
+                    <button type="submit" class="glitch-btn px-6 py-2 rounded-lg font-bold text-sm" onmouseenter="playSound('hover')">
                         <i class="fas fa-paper-plane"></i>
                     </button>
                 </form>
@@ -342,24 +359,56 @@
     <!-- LOGIC -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc, addDoc, collection, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+        // --- SOUND ENGINE (Browser API) ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        window.playSound = (type) => {
+            if(audioCtx.state === 'suspended') audioCtx.resume();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            if(type === 'hover') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.05);
+                gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.05);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.05);
+            } else if(type === 'click') {
+                osc.type = 'square';
+                osc.frequency.setValueAtTime(200, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.1);
+            } else if(type === 'message') {
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(400, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.2);
+                osc.start(); osc.stop(audioCtx.currentTime + 0.2);
+            }
+        };
 
         // --- GLOBAL VARIABLES ---
         let particles = [];
         let isHyperdrive = false;
         let mouse = { x: -1000, y: -1000 };
         
-        // SESSION STATE
         let activeUserEmail = null;
         let isSigningUp = false; 
         let unsubscribeChat = null;
+        let loadedMessages = 0; // For sound logic
         
         const canvas = document.getElementById('canvas-bg');
         const ctx = canvas.getContext('2d');
         let width, height;
 
-        // --- FIREBASE INIT (PRODUCTION KEYS) ---
+        // --- FIREBASE INIT ---
         const firebaseConfig = {
             apiKey: "AIzaSyCsUDyQQU3kimqjr2ACISY_zxeAInm7Idc",
             authDomain: "agent-chat-62e19.firebaseapp.com",
@@ -372,19 +421,14 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        // We use a fixed ID for your live app to separate data from other users
         const appId = "agent-chat-live"; 
 
-        // Init Auth
         const initEnvAuth = async () => {
-             // Try to sign in anonymously for database access
              try {
                 await signInAnonymously(auth);
-                console.log("Connected to Firebase Infrastructure");
              } catch(err) {
-                 console.error("Firebase Connection Error:", err);
-                 // If this fails, the buttons won't work because DB is unreachable
-                 document.getElementById('auth-message').innerText = "SYSTEM OFFLINE: CHECK FIREBASE CONFIG";
+                 console.error("Firebase Auth Error:", err);
+                 document.getElementById('auth-message').innerText = "DB CONNECTION FAILED";
                  document.getElementById('auth-message').style.color = "red";
              }
         };
@@ -416,14 +460,14 @@
 
         // --- AUTH ACTIONS ---
         
-        // 1. SIGN UP
         window.handleSignUp = async (e) => {
             e.preventDefault();
+            playSound('click');
             const email = document.getElementById('signup-email').value.trim();
             const pass = document.getElementById('signup-pass').value;
 
             if(pass.length < 4) {
-                alert("Password too short (min 4 chars)");
+                alert("Password too short");
                 return;
             }
 
@@ -433,8 +477,6 @@
             const docId = sanitizeEmail(email);
 
             try {
-                // Check if exists
-                // Note: We use the 'public' path for shared access in this architecture
                 const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'accounts', docId);
                 const snap = await getDoc(userRef);
 
@@ -442,7 +484,6 @@
                     throw new Error("Account already exists.");
                 }
 
-                // Create Account Doc
                 await setDoc(userRef, {
                     email: email,
                     passwordHash: simpleHash(pass),
@@ -452,7 +493,6 @@
 
                 showSuccessScreen();
                 
-                // Timer
                 let seconds = 8;
                 const timerEl = document.getElementById('countdown-timer');
                 const barEl = document.getElementById('countdown-bar');
@@ -484,9 +524,9 @@
             setLoading(false);
         }
 
-        // 2. LOGIN
         window.handleLogin = async (e) => {
             e.preventDefault();
+            playSound('click');
             const email = document.getElementById('login-email').value.trim();
             const pass = document.getElementById('login-pass').value;
 
@@ -507,7 +547,6 @@
                     throw new Error("Invalid Credentials.");
                 }
 
-                // SUCCESS
                 activeUserEmail = data.email;
                 enterDashboard(data);
 
@@ -520,7 +559,9 @@
         };
 
         window.handleLogout = async () => {
+            playSound('click');
             activeUserEmail = null;
+            loadedMessages = 0;
             if(unsubscribeChat) unsubscribeChat();
             
             dashboardView.style.display = 'none';
@@ -528,7 +569,7 @@
             toggleAuthMode('login');
         };
 
-        // --- DASHBOARD & CHAT LOGIC ---
+        // --- DASHBOARD & CHAT ---
 
         function enterDashboard(userData) {
             authView.style.display = 'none';
@@ -540,10 +581,8 @@
             const date = new Date(userData.joinedAt).toLocaleDateString();
             profileJoined.innerText = date;
 
-            // Start Chat Listener
             setupChat();
 
-            // FX
             isHyperdrive = true;
             setTimeout(() => isHyperdrive = false, 2000);
             setLoading(false);
@@ -554,14 +593,19 @@
             
             if(unsubscribeChat) unsubscribeChat();
             
+            // NOTE: Client-side sort is used here to avoid index requirements in setup
             unsubscribeChat = onSnapshot(query(chatRef), (snapshot) => {
                 
                 const allMessages = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
-                
-                // Client-side Sort
                 allMessages.sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
 
-                // Render
+                // Play sound if new message arrives (and not initial load)
+                if(loadedMessages > 0 && allMessages.length > loadedMessages) {
+                    const lastMsg = allMessages[allMessages.length-1];
+                    if(lastMsg.senderEmail !== activeUserEmail) playSound('message');
+                }
+                loadedMessages = allMessages.length;
+
                 chatContainer.innerHTML = '';
                 
                 if (allMessages.length === 0) {
@@ -572,20 +616,27 @@
                 allMessages.forEach(msg => {
                     const isMe = msg.senderEmail === activeUserEmail;
                     const el = document.createElement('div');
-                    el.className = `msg-bubble flex flex-col ${isMe ? 'msg-own' : 'msg-other'}`;
+                    el.className = `msg-bubble ${isMe ? 'msg-own' : 'msg-other'}`;
                     
                     const senderName = msg.senderEmail.split('@')[0];
+                    // Generate Robot Avatar URL
+                    const avatarUrl = `https://api.dicebear.com/7.x/bottts/svg?seed=${senderName}`;
                     const time = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
 
                     el.innerHTML = `
-                        <span class="msg-sender">${isMe ? 'YOU' : senderName.toUpperCase()} • ${time}</span>
-                        <span>${msg.text}</span>
+                        <img src="${avatarUrl}" class="avatar-img" alt="Avatar">
+                        <div class="msg-content">
+                            <span class="msg-sender">${isMe ? 'YOU' : senderName.toUpperCase()} • ${time}</span>
+                            <span>${msg.text}</span>
+                        </div>
                     `;
                     chatContainer.appendChild(el);
                 });
 
-                // Auto scroll to bottom
-                chatContainer.scrollTop = chatContainer.scrollHeight;
+                // Force Scroll to bottom logic
+                setTimeout(() => {
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                }, 50);
             });
         }
 
@@ -595,6 +646,10 @@
             const text = input.value.trim();
             
             if(!activeUserEmail || !text) return;
+            
+            // Optimistic UI clear
+            input.value = '';
+            playSound('click');
 
             try {
                 await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'global_chat'), {
@@ -603,7 +658,6 @@
                     timestamp: new Date().toISOString(),
                     type: 'chat'
                 });
-                input.value = '';
             } catch(err) {
                 console.error(err);
                 alert("Transmission Failed");
@@ -611,7 +665,7 @@
         };
 
 
-        // --- UI & ANIMATION LOGIC ---
+        // --- UI UTILITIES ---
 
         function showSuccessScreen() {
             document.getElementById('signup-form').classList.add('form-hidden');
@@ -622,6 +676,7 @@
         }
 
         window.toggleAuthMode = (mode) => {
+            playSound('click');
             const loginForm = document.getElementById('login-form');
             const signupForm = document.getElementById('signup-form');
             const successView = document.getElementById('signup-success-view');
