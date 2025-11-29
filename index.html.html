@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Void - Secure Comms</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #050505;
+            font-family: 'Rajdhani', sans-serif;
+            overflow-x: hidden;
+        }
+
+        #canvas-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            transition: filter 1s ease;
+        }
+
+        /* Glassmorphism Panel */
+        .glass-panel {
+            background: rgba(20, 20, 30, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 0 50px rgba(0, 255, 200, 0.05), inset 0 0 30px rgba(0, 0, 0, 0.5);
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+
+        /* Input Styling */
+        .input-group { position: relative; overflow: hidden; margin-bottom: 1.2rem; }
+        
+        .input-field {
+            background: rgba(0, 0, 0, 0.4);
+            border: 2px solid rgba(0, 255, 200, 0.1);
+            color: #0ff;
+            font-family: 'Orbitron', sans-serif;
+            transition: all 0.3s ease;
+            width: 100%;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: #0ff;
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.7);
+        }
+
+        /* Buttons */
+        .glitch-btn {
+            background: linear-gradient(90deg, #0ff, #00d2ff);
+            border: none;
+            color: #000;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s;
+            clip-path: polygon(10% 0, 100% 0, 100% 80%, 90% 100%, 0 100%, 0 20%);
+            cursor: pointer;
+        }
+        .glitch-btn:hover {
+            box-shadow: 0 0 30px rgba(0, 255, 255, 0.4);
+            transform: translateY(-2px);
+        }
+
+        .secondary-action-btn {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid #0ff;
+            color: #0ff;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        .secondary-action-btn:hover {
+            background: rgba(0, 255, 255, 0.1);
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.2);
+        }
+        
+        .secondary-btn {
+            background: transparent;
+            border: 1px solid #0ff;
+            color: #0ff;
+        }
+        .secondary-btn:hover {
+            background: rgba(0, 255, 255, 0.1);
+        }
+
+        /* Layout Helpers */
+        .form-wrapper { position: relative; width: 100%; flex-grow: 1; }
+        .form-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; }
+        .form-hidden { display: none !important; }
+        
+        #dashboard-view { display: none; position: relative; z-index: 50; }
+        #auth-view { display: flex; position: relative; z-index: 50; }
+
+        /* Chat Specifics */
+        .msg-bubble {
+            max-width: 80%;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            position: relative;
+            margin-bottom: 8px;
+            word-wrap: break-word;
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        .msg-own {
+            align-self: flex-end;
+            background: rgba(0, 255, 255, 0.15);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            color: #d0ffff;
+            border-bottom-right-radius: 0;
+        }
+
+        .msg-other {
+            align-self: flex-start;
+            background: rgba(255, 0, 255, 0.15);
+            border: 1px solid rgba(255, 0, 255, 0.3);
+            color: #ffd0ff;
+            border-bottom-left-radius: 0;
+        }
+
+        .msg-sender {
+            font-size: 0.65rem;
+            color: rgba(255,255,255,0.5);
+            margin-bottom: 2px;
+            font-family: 'Orbitron', sans-serif;
+            letter-spacing: 1px;
+        }
+
+        /* Mascot SVG */
+        .eye-pupil { transition: all 0.2s; }
+        .mascot-hand { transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
+        .brain-stem { transition: stroke 0.3s; }
+
+        .shake { animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both; }
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+        ::-webkit-scrollbar-thumb { background: #0ff; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #008888; }
+
+    </style>
+</head>
+<body class="text-white flex flex-col h-screen">
+
+    <canvas id="canvas-bg"></canvas>
+
+    <!-- AUTHENTICATION VIEW -->
+    <div id="auth-view" class="flex-grow flex items-center justify-center p-4">
+        
+        <div id="auth-card" class="glass-panel relative w-full max-w-md p-8 rounded-2xl min-h-[650px] flex flex-col">
+            
+            <!-- Dynamic Mascot Header -->
+            <div class="flex justify-center mb-2 h-32 relative flex-shrink-0">
+                <svg id="mascot-svg" viewBox="0 0 100 100" class="h-full w-auto drop-shadow-[0_0_15px_rgba(0,255,255,0.4)]">
+                    <line x1="50" y1="20" x2="50" y2="5" stroke="#0ff" stroke-width="2" />
+                    <circle id="mascot-brain" cx="50" cy="5" r="4" fill="#1a1a2e" stroke="#0ff" stroke-width="1" />
+                    <path d="M20,50 Q20,20 50,20 Q80,20 80,50 Q80,80 50,80 Q20,80 20,50 Z" fill="#1a1a2e" stroke="#0ff" stroke-width="2" />
+                    
+                    <g id="eyes-group">
+                        <circle cx="35" cy="45" r="10" fill="#000" />
+                        <circle cx="65" cy="45" r="10" fill="#000" />
+                        <circle id="pupil-left" cx="35" cy="45" r="4" fill="#0ff" class="eye-pupil"/>
+                        <circle id="pupil-right" cx="65" cy="45" r="4" fill="#0ff" class="eye-pupil"/>
+                    </g>
+                    <path id="mascot-mouth" d="M35,65 Q50,75 65,65" fill="none" stroke="#0ff" stroke-width="2" stroke-linecap="round" />
+
+                    <path id="hand-left" class="mascot-hand" d="M10,90 Q20,80 35,50 A10,10 0 0,1 45,60" fill="#1a1a2e" stroke="#0ff" stroke-width="2" transform="translate(0, 30)" />
+                    <path id="hand-right" class="mascot-hand" d="M90,90 Q80,80 65,50 A10,10 0 0,0 55,60" fill="#1a1a2e" stroke="#0ff" stroke-width="2" transform="translate(0, 30)" />
+                </svg>
+            </div>
+
+            <div class="form-wrapper">
+                
+                <!-- LOGIN FORM -->
+                <div id="login-form" class="form-container">
+                    <h2 class="text-3xl font-bold text-center mb-6 font-['Orbitron'] tracking-widest text-cyan-400">IDENTIFY</h2>
+                    
+                    <form onsubmit="handleLogin(event)" class="flex-grow">
+                        <div class="input-group">
+                            <input type="email" id="login-email" placeholder="AGENT EMAIL" class="input-field px-4 py-3 rounded-lg" required>
+                        </div>
+                        <div class="input-group">
+                            <input type="password" id="login-pass" placeholder="PASSCODE" class="input-field px-4 py-3 rounded-lg" required>
+                        </div>
+                        
+                        <button type="submit" class="glitch-btn w-full py-4 rounded-lg text-lg mb-6 font-bold">
+                            <i class="fas fa-fingerprint mr-2"></i> ACCESS
+                        </button>
+                    </form>
+
+                    <div class="mt-auto pt-4 border-t border-gray-700/50">
+                        <p class="text-gray-400 text-sm text-center mb-3">NO CREDENTIALS?</p>
+                        <button onclick="toggleAuthMode('signup')" class="secondary-action-btn w-full py-3 rounded-lg text-sm font-bold tracking-wider">
+                            <i class="fas fa-user-plus mr-2"></i> INITIATE RECRUITMENT
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SIGN UP FORM -->
+                <div id="signup-form" class="form-container form-hidden">
+                    <h2 class="text-3xl font-bold text-center mb-6 font-['Orbitron'] tracking-widest text-fuchsia-400">RECRUITMENT</h2>
+                    
+                    <form onsubmit="handleSignUp(event)" class="flex-grow">
+                        <div class="input-group">
+                            <input type="email" id="signup-email" placeholder="ASSIGN EMAIL" class="input-field px-4 py-3 rounded-lg" style="border-color: rgba(255, 0, 255, 0.3); color: #f0f;" required>
+                        </div>
+                        <div class="input-group">
+                            <input type="password" id="signup-pass" placeholder="CREATE PASSCODE" class="input-field px-4 py-3 rounded-lg" style="border-color: rgba(255, 0, 255, 0.3); color: #f0f;" required>
+                        </div>
+                        
+                        <button type="submit" class="glitch-btn w-full py-4 rounded-lg text-lg mb-6 font-bold" style="background: linear-gradient(90deg, #f0f, #a0f);">
+                            <i class="fas fa-check-circle mr-2"></i> JOIN THE VOID
+                        </button>
+                    </form>
+
+                    <div class="mt-auto pt-4 border-t border-gray-700/50">
+                        <p class="text-gray-400 text-sm text-center mb-3">EXISTING AGENT?</p>
+                        <button onclick="toggleAuthMode('login')" class="secondary-action-btn w-full py-3 rounded-lg text-sm font-bold tracking-wider" style="border-color: #f0f; color: #f0f;">
+                            <i class="fas fa-arrow-left mr-2"></i> RETURN TO LOGIN
+                        </button>
+                    </div>
+                </div>
+
+                <!-- SUCCESS REDIRECT OVERLAY (For 8s wait) -->
+                <div id="signup-success-view" class="form-container form-hidden flex flex-col items-center justify-center text-center">
+                    <i class="fas fa-check-circle text-6xl text-green-400 mb-4 animate-bounce"></i>
+                    <h2 class="text-2xl font-bold text-green-400 font-['Orbitron'] mb-2">IDENTITY CONFIRMED</h2>
+                    <p class="text-gray-300 mb-6">Database Record Created.</p>
+                    
+                    <div class="w-full bg-gray-800 h-2 rounded-full overflow-hidden mb-4">
+                        <div id="countdown-bar" class="bg-green-400 h-full w-full transition-all duration-[8000ms] ease-linear"></div>
+                    </div>
+                    
+                    <p class="text-sm font-mono text-green-400">REDIRECTING TO LOGIN IN <span id="countdown-timer">8</span>s...</p>
+                </div>
+
+            </div>
+
+            <div id="auth-message" class="absolute bottom-2 left-0 w-full text-center text-xs font-mono h-4"></div>
+        </div>
+    </div>
+
+    <!-- MAIN APP CONTENT (Hidden until auth) -->
+    <div id="dashboard-view" class="h-full flex flex-col">
+        <header class="glass-panel m-4 p-4 rounded-xl flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-cyan-900 border border-cyan-500 flex items-center justify-center">
+                    <i class="fas fa-robot text-cyan-400"></i>
+                </div>
+                <div>
+                    <h1 class="font-['Orbitron'] text-xl text-white leading-none">THE VOID // COMMS</h1>
+                    <p id="user-display" class="text-xs text-cyan-400 font-mono">AGENT: FETCHING...</p>
+                </div>
+            </div>
+            <button onclick="handleLogout()" class="secondary-btn px-4 py-2 rounded font-['Orbitron'] text-sm hover:bg-red-500/20 hover:border-red-500 hover:text-red-500 transition">
+                DISCONNECT
+            </button>
+        </header>
+
+        <main class="flex-grow flex gap-4 p-4 h-full overflow-hidden">
+            <!-- Left: Info Panel -->
+            <div class="glass-panel p-6 rounded-2xl w-1/4 flex flex-col border-dashed border-2 border-cyan-500/30">
+                <h2 class="text-2xl font-['Orbitron'] mb-4 text-cyan-400">PROFILE</h2>
+                <div class="mb-6 space-y-2 text-sm text-gray-300">
+                    <div class="flex justify-between border-b border-gray-700 pb-1">
+                        <span>STATUS:</span> <span class="text-green-400 animate-pulse">ONLINE</span>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-700 pb-1">
+                        <span>RANK:</span> <span class="text-fuchsia-400">OPERATIVE</span>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-700 pb-1">
+                        <span>NETWORK:</span> <span class="text-white">SECURE</span>
+                    </div>
+                    <div class="flex justify-between border-b border-gray-700 pb-1">
+                        <span>JOINED:</span> <span id="profile-joined" class="text-gray-400">...</span>
+                    </div>
+                </div>
+                
+                <div class="mt-auto bg-black/40 p-4 rounded text-xs text-gray-500 font-mono">
+                    System Message:<br>
+                    Global communication channels are open. Encryption level: MAX.
+                </div>
+            </div>
+
+            <!-- Right: Chat Interface -->
+            <div class="glass-panel rounded-2xl w-3/4 flex flex-col border-2 border-cyan-500/10 relative overflow-hidden">
+                <!-- Chat Header -->
+                <div class="p-4 border-b border-gray-700 bg-black/20 flex justify-between items-center">
+                    <h2 class="font-['Orbitron'] text-white flex items-center gap-2">
+                        <i class="fas fa-comments text-cyan-400"></i> GLOBAL CHANNEL #1
+                    </h2>
+                    <div class="flex items-center gap-2">
+                         <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                         <span class="text-xs font-mono text-gray-400">LIVE FEED</span>
+                    </div>
+                </div>
+                
+                <!-- Messages Area -->
+                <div id="chat-messages" class="flex-grow overflow-y-auto p-4 flex flex-col gap-2">
+                    <div class="text-center text-gray-500 text-sm italic mt-10">Connecting to secure frequency...</div>
+                </div>
+
+                <!-- Input Area -->
+                <form onsubmit="handleSendChat(event)" class="p-4 bg-black/30 border-t border-gray-700 flex gap-2">
+                    <input type="text" id="chat-input" placeholder="TRANSMIT MESSAGE..." class="input-field px-4 py-3 rounded-lg flex-grow text-sm" autocomplete="off" required>
+                    <button type="submit" class="glitch-btn px-6 py-2 rounded-lg font-bold text-sm">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <!-- LOGIC -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+        import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, addDoc, collection, onSnapshot, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+
+        // --- GLOBAL VARIABLES ---
+        let particles = [];
+        let isHyperdrive = false;
+        let mouse = { x: -1000, y: -1000 };
+        
+        // SESSION STATE
+        let activeUserEmail = null;
+        let isSigningUp = false; 
+        let unsubscribeChat = null;
+        
+        const canvas = document.getElementById('canvas-bg');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        // --- FIREBASE INIT (PRODUCTION KEYS) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyCsUDyQQU3kimqjr2ACISY_zxeAInm7Idc",
+            authDomain: "agent-chat-62e19.firebaseapp.com",
+            projectId: "agent-chat-62e19",
+            storageBucket: "agent-chat-62e19.firebasestorage.app",
+            messagingSenderId: "691634400352",
+            appId: "1:691634400352:web:bd6b379adcd92095266705",
+            measurementId: "G-FVJ5VG5JX1"
+        };
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        // We use a fixed ID for your live app to separate data from other users
+        const appId = "agent-chat-live"; 
+
+        // Init Auth
+        const initEnvAuth = async () => {
+             // Try to sign in anonymously for database access
+             try {
+                await signInAnonymously(auth);
+                console.log("Connected to Firebase Infrastructure");
+             } catch(err) {
+                 console.error("Firebase Connection Error:", err);
+                 // If this fails, the buttons won't work because DB is unreachable
+                 document.getElementById('auth-message').innerText = "SYSTEM OFFLINE: CHECK FIREBASE CONFIG";
+                 document.getElementById('auth-message').style.color = "red";
+             }
+        };
+        initEnvAuth();
+
+        // --- UI ELEMENTS ---
+        const authView = document.getElementById('auth-view');
+        const dashboardView = document.getElementById('dashboard-view');
+        const userDisplay = document.getElementById('user-display');
+        const profileJoined = document.getElementById('profile-joined');
+        const authMessage = document.getElementById('auth-message');
+        const chatContainer = document.getElementById('chat-messages');
+        const mascotBrain = document.getElementById('mascot-brain');
+
+        // --- AUTH HELPER (Simple Hash) ---
+        function simpleHash(str) {
+            let hash = 0;
+            for (let i = 0; i < str.length; i++) {
+                const char = str.charCodeAt(i);
+                hash = (hash << 5) - hash + char;
+                hash = hash & hash;
+            }
+            return btoa(hash + "salt");
+        }
+
+        function sanitizeEmail(email) {
+            return email.replace(/[^a-zA-Z0-9]/g, '_').toLowerCase();
+        }
+
+        // --- AUTH ACTIONS ---
+        
+        // 1. SIGN UP
+        window.handleSignUp = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('signup-email').value.trim();
+            const pass = document.getElementById('signup-pass').value;
+
+            if(pass.length < 4) {
+                alert("Password too short (min 4 chars)");
+                return;
+            }
+
+            setLoading(true, "CREATING DATABASE RECORD...");
+            isSigningUp = true;
+            
+            const docId = sanitizeEmail(email);
+
+            try {
+                // Check if exists
+                // Note: We use the 'public' path for shared access in this architecture
+                const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'accounts', docId);
+                const snap = await getDoc(userRef);
+
+                if (snap.exists()) {
+                    throw new Error("Account already exists.");
+                }
+
+                // Create Account Doc
+                await setDoc(userRef, {
+                    email: email,
+                    passwordHash: simpleHash(pass),
+                    joinedAt: new Date().toISOString(),
+                    role: 'agent'
+                });
+
+                showSuccessScreen();
+                
+                // Timer
+                let seconds = 8;
+                const timerEl = document.getElementById('countdown-timer');
+                const barEl = document.getElementById('countdown-bar');
+                requestAnimationFrame(() => { if(barEl) barEl.style.width = '0%'; });
+
+                const countdown = setInterval(() => {
+                    seconds--;
+                    if(timerEl) timerEl.innerText = seconds;
+                    if (seconds <= 0) {
+                        clearInterval(countdown);
+                        finishSignUpProcess();
+                    }
+                }, 1000);
+
+            } catch (error) {
+                console.error(error);
+                alert("Sign Up Failed: " + error.message);
+                showMessage(error.message, 'error');
+                shakeCard();
+                isSigningUp = false;
+                setLoading(false);
+            }
+        };
+
+        async function finishSignUpProcess() {
+            document.getElementById('signup-success-view').classList.add('form-hidden');
+            toggleAuthMode('login');
+            isSigningUp = false;
+            setLoading(false);
+        }
+
+        // 2. LOGIN
+        window.handleLogin = async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value.trim();
+            const pass = document.getElementById('login-pass').value;
+
+            setLoading(true, "VERIFYING ENCRYPTION...");
+
+            const docId = sanitizeEmail(email);
+
+            try {
+                const userRef = doc(db, 'artifacts', appId, 'public', 'data', 'accounts', docId);
+                const snap = await getDoc(userRef);
+
+                if (!snap.exists()) {
+                    throw new Error("Account not found. Please Sign Up.");
+                }
+
+                const data = snap.data();
+                if (data.passwordHash !== simpleHash(pass)) {
+                    throw new Error("Invalid Credentials.");
+                }
+
+                // SUCCESS
+                activeUserEmail = data.email;
+                enterDashboard(data);
+
+            } catch (error) {
+                console.error(error);
+                showMessage("ACCESS DENIED: " + error.message, 'error');
+                shakeCard();
+                setLoading(false);
+            }
+        };
+
+        window.handleLogout = async () => {
+            activeUserEmail = null;
+            if(unsubscribeChat) unsubscribeChat();
+            
+            dashboardView.style.display = 'none';
+            authView.style.display = 'flex';
+            toggleAuthMode('login');
+        };
+
+        // --- DASHBOARD & CHAT LOGIC ---
+
+        function enterDashboard(userData) {
+            authView.style.display = 'none';
+            dashboardView.style.display = 'flex';
+            
+            const safeName = userData.email.split('@')[0].toUpperCase();
+            userDisplay.textContent = `AGENT: ${safeName}`;
+            
+            const date = new Date(userData.joinedAt).toLocaleDateString();
+            profileJoined.innerText = date;
+
+            // Start Chat Listener
+            setupChat();
+
+            // FX
+            isHyperdrive = true;
+            setTimeout(() => isHyperdrive = false, 2000);
+            setLoading(false);
+        }
+
+        function setupChat() {
+            const chatRef = collection(db, 'artifacts', appId, 'public', 'data', 'global_chat');
+            
+            if(unsubscribeChat) unsubscribeChat();
+            
+            unsubscribeChat = onSnapshot(query(chatRef), (snapshot) => {
+                
+                const allMessages = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                
+                // Client-side Sort
+                allMessages.sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+                // Render
+                chatContainer.innerHTML = '';
+                
+                if (allMessages.length === 0) {
+                    chatContainer.innerHTML = '<div class="text-gray-500 text-center text-sm italic mt-10">Channel Empty. Start Transmission...</div>';
+                    return;
+                }
+
+                allMessages.forEach(msg => {
+                    const isMe = msg.senderEmail === activeUserEmail;
+                    const el = document.createElement('div');
+                    el.className = `msg-bubble flex flex-col ${isMe ? 'msg-own' : 'msg-other'}`;
+                    
+                    const senderName = msg.senderEmail.split('@')[0];
+                    const time = new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+                    el.innerHTML = `
+                        <span class="msg-sender">${isMe ? 'YOU' : senderName.toUpperCase()} • ${time}</span>
+                        <span>${msg.text}</span>
+                    `;
+                    chatContainer.appendChild(el);
+                });
+
+                // Auto scroll to bottom
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            });
+        }
+
+        window.handleSendChat = async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            
+            if(!activeUserEmail || !text) return;
+
+            try {
+                await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'global_chat'), {
+                    text: text,
+                    senderEmail: activeUserEmail,
+                    timestamp: new Date().toISOString(),
+                    type: 'chat'
+                });
+                input.value = '';
+            } catch(err) {
+                console.error(err);
+                alert("Transmission Failed");
+            }
+        };
+
+
+        // --- UI & ANIMATION LOGIC ---
+
+        function showSuccessScreen() {
+            document.getElementById('signup-form').classList.add('form-hidden');
+            document.getElementById('signup-success-view').classList.remove('form-hidden');
+            document.getElementById('mascot-mouth').setAttribute('d', 'M35,65 Q50,75 65,65');
+            document.getElementById('hand-left').setAttribute('transform', 'translate(0, -30) rotate(-20)');
+            document.getElementById('hand-right').setAttribute('transform', 'translate(0, -30) rotate(20)');
+        }
+
+        window.toggleAuthMode = (mode) => {
+            const loginForm = document.getElementById('login-form');
+            const signupForm = document.getElementById('signup-form');
+            const successView = document.getElementById('signup-success-view');
+            
+            document.querySelectorAll('input').forEach(i => i.value = '');
+            if(authMessage) authMessage.innerText = '';
+            
+            successView.classList.add('form-hidden');
+            const bar = document.getElementById('countdown-bar');
+            if(bar) bar.style.width = '100%';
+            
+            if (mode === 'signup') {
+                loginForm.classList.add('form-hidden');
+                signupForm.classList.remove('form-hidden');
+                if(particles.length > 0) particles.forEach(p => p.color = Math.random() > 0.5 ? '#ff00ff' : '#aa00ff');
+                if(mascotBrain) mascotBrain.setAttribute('fill', '#f0f');
+            } else {
+                signupForm.classList.add('form-hidden');
+                loginForm.classList.remove('form-hidden');
+                if(particles.length > 0) particles.forEach(p => p.color = Math.random() > 0.5 ? '#00ffff' : '#00aaff');
+                if(mascotBrain) mascotBrain.setAttribute('fill', '#0ff');
+            }
+        };
+
+        function showMessage(msg, type) {
+            if(!authMessage) return;
+            authMessage.innerText = msg;
+            authMessage.style.color = type === 'error' ? '#ff3333' : '#00ff00';
+        }
+
+        function setLoading(isLoading, text = "") {
+            if (!isLoading) {
+                 const btns = document.querySelectorAll('button[type="submit"]');
+                 btns.forEach(b => {
+                    b.innerHTML = b.dataset.originalText || "SUBMIT";
+                    b.disabled = false;
+                 });
+                 return;
+            }
+            const btns = document.querySelectorAll('button[type="submit"]');
+            btns.forEach(b => {
+                b.dataset.originalText = b.innerHTML;
+                b.innerHTML = `<i class="fas fa-circle-notch fa-spin"></i> ${text}`;
+                b.disabled = true;
+            });
+        }
+
+        function shakeCard() {
+            const card = document.getElementById('auth-card');
+            if(card) {
+                card.classList.add('shake');
+                setTimeout(() => card.classList.remove('shake'), 500);
+            }
+            const pl = document.getElementById('pupil-left');
+            const pr = document.getElementById('pupil-right');
+            if(pl && pr) {
+                pl.setAttribute('fill', 'red');
+                pr.setAttribute('fill', 'red');
+                setTimeout(() => {
+                    pl.setAttribute('fill', '#0ff');
+                    pr.setAttribute('fill', '#0ff');
+                }, 1000);
+            }
+        }
+
+        // --- CANVAS ---
+        const resize = () => { width = canvas.width = window.innerWidth; height = canvas.height = window.innerHeight; };
+        window.addEventListener('resize', resize);
+        resize();
+
+        class Particle {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * width; this.y = Math.random() * height;
+                this.vx = (Math.random() - 0.5) * 1; this.vy = (Math.random() - 0.5) * 1;
+                this.size = Math.random() * 2 + 1;
+                this.color = Math.random() > 0.5 ? '#00ffff' : '#00aaff';
+                this.baseX = this.x; this.baseY = this.y;
+                this.density = (Math.random() * 30) + 1;
+            }
+            update() {
+                if (isHyperdrive) {
+                    const dx = (width/2) - this.x; const dy = (height/2) - this.y;
+                    this.x += dx * 0.1; this.y += dy * 0.1;
+                    if(Math.abs(dx) < 10) this.reset();
+                } else {
+                    const dx = mouse.x - this.x; const dy = mouse.y - this.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if (dist < 100) {
+                        const forceDirectionX = dx / dist; const forceDirectionY = dy / dist;
+                        const force = (100 - dist) / 100;
+                        this.x -= forceDirectionX * force * this.density * 2;
+                        this.y -= forceDirectionY * force * this.density * 2;
+                    } else {
+                        if (this.x !== this.baseX) this.x -= (this.x - this.baseX) / 40;
+                        if (this.y !== this.baseY) this.y -= (this.y - this.baseY) / 40;
+                    }
+                    this.x += this.vx; this.y += this.vy;
+                }
+            }
+            draw() { ctx.beginPath(); ctx.arc(this.x, this.y, this.size, 0, Math.PI*2); ctx.fillStyle = this.color; ctx.fill(); }
+        }
+
+        for(let i=0; i<100; i++) particles.push(new Particle());
+
+        function animate() {
+            ctx.fillStyle = isHyperdrive ? 'rgba(0,0,0,0.2)' : 'rgba(5,5,10,0.3)';
+            ctx.fillRect(0, 0, width, height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animate);
+        }
+        animate(); 
+
+        window.addEventListener('mousemove', e => {
+            mouse.x = e.clientX; mouse.y = e.clientY;
+            moveMascotEyes(e.clientX, e.clientY);
+        });
+
+        const pupilLeft = document.getElementById('pupil-left');
+        const pupilRight = document.getElementById('pupil-right');
+        const mascotSVG = document.getElementById('mascot-svg');
+        const passInputs = document.querySelectorAll('input[type="password"]');
+        
+        function moveMascotEyes(x, y) {
+            if(!mascotSVG || !pupilLeft || !pupilRight) return;
+            if(document.activeElement.type === 'password') return;
+            
+            const rect = mascotSVG.getBoundingClientRect();
+            const cx = rect.left + rect.width/2; const cy = rect.top + rect.height/2;
+            const angle = Math.atan2(y - cy, x - cx);
+            const dist = Math.min(6, Math.hypot(x-cx, y-cy)/20);
+            const ox = Math.cos(angle)*dist; const oy = Math.sin(angle)*dist;
+            
+            pupilLeft.setAttribute('cx', 35+ox); pupilLeft.setAttribute('cy', 45+oy);
+            pupilRight.setAttribute('cx', 65+ox); pupilRight.setAttribute('cy', 45+oy);
+        }
+
+        passInputs.forEach(input => {
+            input.addEventListener('focus', () => {
+                const hl = document.getElementById('hand-left');
+                const hr = document.getElementById('hand-right');
+                if(hl) hl.setAttribute('transform', 'translate(0, -35)');
+                if(hr) hr.setAttribute('transform', 'translate(0, -35)');
+                if(pupilLeft) { pupilLeft.setAttribute('cx', 35); pupilLeft.setAttribute('cy', 45); }
+                if(pupilRight) { pupilRight.setAttribute('cx', 65); pupilRight.setAttribute('cy', 45); }
+            });
+            input.addEventListener('blur', () => {
+                const hl = document.getElementById('hand-left');
+                const hr = document.getElementById('hand-right');
+                if(hl) hl.setAttribute('transform', 'translate(0, 30)');
+                if(hr) hr.setAttribute('transform', 'translate(0, 30)');
+            });
+            input.addEventListener('input', (e) => {
+                 const len = e.target.value.length;
+                 const colors = ['#ff0000', '#ffaa00', '#ffff00', '#00ff00'];
+                 const color = colors[Math.min(Math.floor(len/3), 3)] || '#00ffff';
+                 if(mascotBrain) {
+                     mascotBrain.setAttribute('fill', color);
+                     mascotBrain.setAttribute('r', 4 + (len%2));
+                 }
+            });
+        });
+
+    </script>
+</body>
+</html>
